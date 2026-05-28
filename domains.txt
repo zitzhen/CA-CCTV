@@ -2,3 +2,5 @@
 # Enter your domain name, one per line
 # 开头有"#"的行是注释行
 # Lines that start with "#" are comment lines
+# 例如"example.com"不要有特殊符号，仅输入顶级域名本体
+# For example, 'example.com' should not contain special characters, only input the main part of the top-level domain
