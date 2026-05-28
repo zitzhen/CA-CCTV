@@ -1,0 +1,4 @@
+# 输入你的域名，每行一个
+# Enter your domain name, one per line
+# 开头有"#"的行是注释行
+# Lines that start with "#" are comment lines
