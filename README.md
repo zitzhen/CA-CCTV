@@ -1,4 +1,4 @@
 # CA-CCTV
 >WIP
 
-This project is for monitoring whether your website's certificate authority has issued unauthorized certificates.
+CA-CCTV watches Certificate Transparency logs for your domains and alerts you when new certificates appear.
