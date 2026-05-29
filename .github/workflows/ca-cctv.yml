@@ -2,7 +2,6 @@ name: CA-CCTV
 
 on:
   schedule:
-    # Run every 6 hours. GitHub Actions uses UTC.
     - cron: "0 */6 * * *"
   workflow_dispatch:
     inputs:
@@ -19,19 +18,16 @@ permissions:
   contents: write
 
 concurrency:
-  group: ca-cctv-${{ github.ref }}
+  group: ca-cctv
   cancel-in-progress: false
 
 jobs:
   watch:
-    name: Watch Certificate Transparency logs
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -43,44 +39,44 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
+      - name: Ensure state directory exists
+        run: |
+          mkdir -p .ct-state
+
       - name: Run CA-CCTV
         id: ct
         run: |
           if [ "${{ github.event.inputs.init }}" = "true" ]; then
-            python ct_watch.py --init | tee ct-watch.log
+            python ct_watch.py --init
           else
-            python ct_watch.py | tee ct-watch.log
+            python ct_watch.py
           fi
 
       - name: Send email alert
-        if: steps.ct.outputs.has_new == 'true'
+        if: steps.ct.outputs.has_new == 'true' && github.event.inputs.init != 'true'
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_SECURITY: ${{ secrets.SMTP_SECURITY }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
-          MAIL_FROM_NAME: ${{ secrets.MAIL_FROM_NAME }}
-          MAIL_SUBJECT: ${{ secrets.MAIL_SUBJECT }}
         run: |
           python email.py \
             --count "${{ steps.ct.outputs.count }}" \
             --summary "${{ steps.ct.outputs.summary }}"
 
-      - name: Commit state files
-        if: always()
+      - name: Commit state
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          mkdir -p .ct-state
           git add .ct-state/
 
           if git diff --cached --quiet; then
-            echo "No state changes to commit."
-            exit 0
+            echo "No state changes"
+          else
+            git commit -m "Update certificate state"
+            git push
           fi
-
-          git commit -m "chore: update CA-CCTV state"
-          git push
