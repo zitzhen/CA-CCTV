@@ -319,8 +319,9 @@ def main() -> int:
         domains = load_domains(Path(args.domains_file))
 
     if not domains:
-        print("[!] No domains to scan.", file=sys.stderr)
-        return 2
+        print("[*] No domains to scan. Nothing to do.")
+        write_github_output([])
+        return 0
 
     print("Domains to be scanned:")
     for domain in domains:
